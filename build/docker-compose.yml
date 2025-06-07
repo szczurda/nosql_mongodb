@@ -4,7 +4,6 @@ services:
   router01:
     build: 
       context: mongodb-build
-    image: mongo:latest
     container_name: router-01
     command: mongos --port 27017 --configdb rs-config-server/configsvr01:27017,configsvr02:27017,configsvr03:27017 --bind_ip_all --keyFile /data/mongodb-keyfile
     ports:
@@ -14,10 +13,10 @@ services:
       - ./scripts:/scripts
       - mongodb_cluster_router01_db:/data/db
       - mongodb_cluster_router01_config:/data/configdb
+
   router02:
     build: 
       context: mongodb-build
-    image: mongo:latest
     container_name: router-02
     command: mongos --port 27017 --configdb rs-config-server/configsvr01:27017,configsvr02:27017,configsvr03:27017 --bind_ip_all --keyFile /data/mongodb-keyfile
     volumes:
@@ -27,14 +26,11 @@ services:
     ports:
       - 27118:27017
     restart: always
-    links:
-      - router01
 
 ## Config Servers
   configsvr01:
     build: 
       context: mongodb-build
-    image: mongo:latest
     container_name: mongo-config-01 
     command: mongod --port 27017 --configsvr --replSet rs-config-server --keyFile /data/mongodb-keyfile
     volumes:
@@ -44,16 +40,10 @@ services:
     ports:
       - 27119:27017
     restart: always
-    links:
-      - shard01-a
-      - shard02-a
-      - shard03-a
-      - configsvr02
-      - configsvr03
+
   configsvr02:
     build: 
       context: mongodb-build
-    image: mongo:latest
     container_name: mongo-config-02 
     command: mongod --port 27017 --configsvr --replSet rs-config-server --keyFile /data/mongodb-keyfile
     volumes:
@@ -63,10 +53,10 @@ services:
     ports:
       - 27120:27017
     restart: always
+
   configsvr03:
     build: 
       context: mongodb-build
-    image: mongo:latest
     container_name: mongo-config-03 
     command: mongod --port 27017 --configsvr --replSet rs-config-server --keyFile /data/mongodb-keyfile
     volumes:
@@ -84,7 +74,6 @@ services:
   shard01-a:
     build: 
       context: mongodb-build
-    image: mongo:latest
     container_name: shard-01-node-a
     command: mongod --port 27017 --shardsvr --replSet rs-shard-01 --keyFile /data/mongodb-keyfile
     volumes:
@@ -94,13 +83,10 @@ services:
     ports:
       - 27122:27017
     restart: always
-    links:
-      - shard01-b
-      - shard01-c
+
   shard01-b:
     build: 
       context: mongodb-build
-    image: mongo:latest
     container_name: shard-01-node-b
     command: mongod --port 27017 --shardsvr --replSet rs-shard-01 --keyFile /data/mongodb-keyfile
     volumes:
@@ -110,10 +96,10 @@ services:
     ports:
       - 27123:27017
     restart: always
+
   shard01-c:
     build: 
       context: mongodb-build
-    image: mongo:latest
     container_name: shard-01-node-c
     command: mongod --port 27017 --shardsvr --replSet rs-shard-01 --keyFile /data/mongodb-keyfile
     volumes:
@@ -128,7 +114,6 @@ services:
   shard02-a:
     build: 
       context: mongodb-build
-    image: mongo:latest
     container_name: shard-02-node-a
     command: mongod --port 27017 --shardsvr --replSet rs-shard-02 --keyFile /data/mongodb-keyfile
     volumes:
@@ -138,13 +123,10 @@ services:
     ports:
       - 27125:27017
     restart: always
-    links:
-      - shard02-b
-      - shard02-c
+
   shard02-b:
     build: 
       context: mongodb-build
-    image: mongo:latest
     container_name: shard-02-node-b
     command: mongod --port 27017 --shardsvr --replSet rs-shard-02 --keyFile /data/mongodb-keyfile
     volumes:
@@ -157,7 +139,6 @@ services:
   shard02-c:
     build: 
       context: mongodb-build
-    image: mongo:latest
     container_name: shard-02-node-c
     command: mongod --port 27017 --shardsvr --replSet rs-shard-02 --keyFile /data/mongodb-keyfile
     volumes:
@@ -172,7 +153,6 @@ services:
   shard03-a:
     build: 
       context: mongodb-build
-    image: mongo:latest
     container_name: shard-03-node-a
     command: mongod --port 27017 --shardsvr --replSet rs-shard-03 --keyFile /data/mongodb-keyfile
     volumes:
@@ -182,13 +162,10 @@ services:
     ports:
       - 27128:27017
     restart: always
-    links:
-      - shard03-b
-      - shard03-c
+
   shard03-b:
     build: 
       context: mongodb-build
-    image: mongo:latest
     container_name: shard-03-node-b
     command: mongod --port 27017 --shardsvr --replSet rs-shard-03 --keyFile /data/mongodb-keyfile
     volumes:
@@ -198,10 +175,10 @@ services:
     ports:
       - 27129:27017
     restart: always
+
   shard03-c:
     build: 
       context: mongodb-build
-    image: mongo:latest
     container_name: shard-03-node-c
     command: mongod --port 27017 --shardsvr --replSet rs-shard-03 --keyFile /data/mongodb-keyfile
     volumes:

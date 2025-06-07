@@ -1,0 +1,4 @@
+# Treat JS and YAML files as text with LF endings only
+*.js text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf

@@ -1,4 +1,21 @@
 import json
+import geohash2
+from shapely.geometry import shape, Point, LineString, Polygon, MultiPolygon, MultiLineString
+
+def compute_geohash(geometry):
+    try:
+        geom_type = geometry.get("type")
+        coords = geometry.get("coordinates")
+        if geom_type in {"Point"}:
+            lon, lat = coords
+        else:
+            # Pro složitější geometrie je použitý centroid
+            geo_shape = shape(geometry)
+            centroid: Point = geo_shape.centroid
+            lon, lat = centroid.x, centroid.y
+        return geohash2.encode(lat, lon, precision=9)
+    except Exception:
+        return None
 
 def clean_osm_data_for_mongo(features):
     seen_ids = set()
@@ -15,17 +32,19 @@ def clean_osm_data_for_mongo(features):
         geom_type = geometry.get("type")
         coords = geometry.get("coordinates")
 
-        if geom_type == "LineString" and (not coords or len(coords) < 2):
-            removed_count += 1
-            continue
-        if geom_type == "Polygon" and (not coords or not any(len(ring) >= 4 for ring in coords)):
-            removed_count += 1
-            continue
-        if geom_type == "MultiPolygon" and (not coords or not any(
-                any(len(ring) >= 4 for ring in polygon) for polygon in coords)):
-            removed_count += 1
-            continue
         if coords is None:
+            removed_count += 1
+            continue
+
+        if geom_type == "LineString" and len(coords) < 2:
+            removed_count += 1
+            continue
+        if geom_type == "Polygon" and not any(len(ring) >= 4 for ring in coords):
+            removed_count += 1
+            continue
+        if geom_type == "MultiPolygon" and not any(
+                any(len(ring) >= 4 for ring in polygon) for polygon in coords
+        ):
             removed_count += 1
             continue
 
@@ -40,18 +59,26 @@ def clean_osm_data_for_mongo(features):
         props = feature.get("properties", {})
         props.pop("@id", None)
 
-        # Remove all "name:*" keys, keep only "name"
-        name_keys = [k for k in props if k.startswith("name:")]
-        for k in name_keys:
-            props.pop(k, None)
+        # Odstranit "name:*"
+        for k in list(props.keys()):
+            if k.startswith("name:"):
+                props.pop(k)
 
-        # Clean @relations > reltags
+        # Odstranit "name:*" i v @relations.reltags
         if "@relations" in props:
             for rel in props["@relations"]:
                 reltags = rel.get("reltags", {})
-                name_keys = [k for k in reltags if k.startswith("name:")]
-                for k in name_keys:
-                    reltags.pop(k, None)
+                for k in list(reltags.keys()):
+                    if k.startswith("name:"):
+                        reltags.pop(k)
+
+        # Vypočti geohash
+        geohash = compute_geohash(geometry)
+        if geohash:
+            props["geohash"] = geohash
+        else:
+            removed_count += 1
+            continue
 
         cleaned.append(feature)
 
@@ -72,11 +99,7 @@ def main(input_file, output_file):
 
     cleaned, removed_count = clean_osm_data_for_mongo(features)
 
-    if isinstance(data, dict) and "features" in data:
-        data["features"] = cleaned
-        output_data = data
-    else:
-        output_data = cleaned
+    output_data = {"type": "FeatureCollection", "features": cleaned} if isinstance(data, dict) else cleaned
 
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(output_data, f, indent=2, ensure_ascii=False)

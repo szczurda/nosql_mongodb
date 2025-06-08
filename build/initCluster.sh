@@ -24,6 +24,13 @@ sleep 10
 echo "Initializing router..."
 docker compose exec router01 sh -c "mongosh < /scripts/init-router.js"
 
+# === Wait until router is ready ===
+echo "Waiting for router to be ready..."
+until docker compose exec router01 mongosh --eval "db.runCommand({ ping: 1 })" > /dev/null 2>&1; do
+  echo "router01 not ready yet, waiting another 5s..."
+  sleep 5
+done
+
 # === Step 4: Setup authentication ===
 echo "Setting up authentication..."
 docker compose exec configsvr01 bash "/scripts/auth.js"

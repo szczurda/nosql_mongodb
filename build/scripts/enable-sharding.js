@@ -1,1 +1,2 @@
-sh.enableSharding("Places")
+sh.enableSharding("OSM_DB")
+

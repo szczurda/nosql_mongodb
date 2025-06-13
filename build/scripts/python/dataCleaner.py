@@ -1,15 +1,15 @@
 import json
 import geohash2
 from shapely.geometry import shape, Point, LineString, Polygon, MultiPolygon, MultiLineString
+from shapely.errors import ShapelyError  # safer exception catching
 
 def compute_geohash(geometry):
     try:
         geom_type = geometry.get("type")
         coords = geometry.get("coordinates")
-        if geom_type in {"Point"}:
+        if geom_type == "Point":
             lon, lat = coords
         else:
-            # Pro složitější geometrie je použitý centroid
             geo_shape = shape(geometry)
             centroid: Point = geo_shape.centroid
             lon, lat = centroid.x, centroid.y
@@ -21,6 +21,7 @@ def clean_osm_data_for_mongo(features):
     seen_ids = set()
     cleaned = []
     removed_count = 0
+    invalid_geometry_count = 0
 
     for feature in features:
         osm_id = feature.get("id")
@@ -48,6 +49,16 @@ def clean_osm_data_for_mongo(features):
             removed_count += 1
             continue
 
+        # Additional geometry validity check using shapely
+        try:
+            geo_shape = shape(geometry)
+            if not geo_shape.is_valid:
+                invalid_geometry_count += 1
+                continue
+        except ShapelyError:
+            invalid_geometry_count += 1
+            continue
+
         if osm_id in seen_ids:
             removed_count += 1
             continue
@@ -59,12 +70,10 @@ def clean_osm_data_for_mongo(features):
         props = feature.get("properties", {})
         props.pop("@id", None)
 
-        # Odstranit "name:*"
         for k in list(props.keys()):
             if k.startswith("name:"):
                 props.pop(k)
 
-        # Odstranit "name:*" i v @relations.reltags
         if "@relations" in props:
             for rel in props["@relations"]:
                 reltags = rel.get("reltags", {})
@@ -72,7 +81,6 @@ def clean_osm_data_for_mongo(features):
                     if k.startswith("name:"):
                         reltags.pop(k)
 
-        # Vypočti geohash
         geohash = compute_geohash(geometry)
         if geohash:
             props["geohash"] = geohash
@@ -82,8 +90,8 @@ def clean_osm_data_for_mongo(features):
 
         cleaned.append(feature)
 
-    return cleaned, removed_count
-
+    print(f"Počet feature s nevalidní geometrií: {invalid_geometry_count}")
+    return cleaned, removed_count + invalid_geometry_count
 
 def main(input_file, output_file):
     with open(input_file, encoding="utf-8") as f:
@@ -107,7 +115,6 @@ def main(input_file, output_file):
     print(f"Počet původních feature: {len(features)}")
     print(f"Počet odstraněných feature: {removed_count}")
     print(f"Počet výsledných feature: {len(cleaned)}")
-
 
 if __name__ == "__main__":
     import sys

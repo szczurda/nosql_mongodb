@@ -9,6 +9,10 @@ services:
     ports:
       - 27117:27017
     restart: always
+    depends_on:
+      - configsvr01
+      - configsvr02
+      - configsvr03
     volumes:
       - ./scripts:/scripts
       - mongodb_cluster_router01_db:/data/db

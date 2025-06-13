@@ -43,3 +43,12 @@ echo "Enabling sharding on router..."
 docker compose exec router01 mongosh --port 27017 -u "admin" -p "nosql_2025" --authenticationDatabase admin /scripts/enable-sharding.js
 
 echo "MongoDB cluster initialized successfully."
+
+# === Wait for router to be ready for authenticated connections ===
+echo "Waiting for router to be ready for authenticated connections..."
+until docker compose exec router01 mongosh --port 27017 -u "admin" -p "nosql_2025" --authenticationDatabase admin --eval "db.runCommand({ ping: 1 })" > /dev/null 2>&1; do
+  echo "router01 not ready yet (auth), waiting another 5s..."
+  sleep 5
+done
+
+docker compose run importer

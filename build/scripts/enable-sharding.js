@@ -76,8 +76,8 @@ db.accommodations.createIndex({ geohash: 1 })
 db.accommodations.createIndex({ geometry: "2dsphere" })
 sh.shardCollection("OSM_DB.accommodations", { geohash: 1 })
 
-// --- Public Transport ---
-db.createCollection("public_transport", {
+// --- Transportation ---
+db.createCollection("transportation", {
   validator: {
     $jsonSchema: {
       bsonType: "object",
@@ -106,7 +106,7 @@ db.createCollection("public_transport", {
             geohash: { bsonType: "string" },
             highway: { enum: ["bus_stop"] },
             railway: { enum: ["station", "tram_stop", "subway_entrance"] },
-            public_transport: { enum: ["stop_position", "platform"] }
+            transportation: { enum: ["stop_position", "platform"] }
           },
           additionalProperties: true
         }
@@ -115,6 +115,6 @@ db.createCollection("public_transport", {
     }
   }
 })
-db.public_transport.createIndex({ geohash: 1 })
-db.public_transport.createIndex({ geometry: "2dsphere" })
-sh.shardCollection("OSM_DB.public_transport", { geohash: 1 })
+db.transportation.createIndex({ geohash: 1 })
+db.transportation.createIndex({ geometry: "2dsphere" })
+sh.shardCollection("OSM_DB.transportation", { geohash: 1 })

@@ -31,6 +31,17 @@ services:
       - 27118:27017
     restart: always
 
+## Python importer service
+  importer:
+    build:
+      context: ./scripts/python
+      dockerfile: importer/Dockerfile
+    container_name: importer
+    volumes:
+      - ./scripts/python/data_cleaned:/python/data
+    depends_on:
+      - router01
+
 ## Config Servers
   configsvr01:
     build: 

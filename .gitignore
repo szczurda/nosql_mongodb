@@ -1,0 +1,4 @@
+# Virtual environments
+/.venv
+/build/scripts/python/venv
+/build/scripts/python/path

@@ -83,7 +83,7 @@ def clean_osm_data_for_mongo(features):
 
         geohash = compute_geohash(geometry)
         if geohash:
-            props["geohash"] = geohash
+            feature["geohash"] = geohash  # <-- geohash is now top-level
         else:
             removed_count += 1
             continue

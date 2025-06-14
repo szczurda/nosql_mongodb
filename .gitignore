@@ -1,4 +1,3 @@
 # Virtual environments
 /.venv
-/build/scripts/python/venv
-/build/scripts/python/path
+/build/scripts/python/venv_clean
